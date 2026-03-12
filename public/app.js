@@ -173,10 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Tag Input Logic ---
     function validateTag(text) {
-        const regex = /^[a-zA-Z0-9\s-]+$/;
         if (text.length < 1) return "Tag too short";
         if (text.length > 50) return "Tag too long (max 50 chars)";
-        if (!regex.test(text)) return "Invalid characters (alphanumeric, spaces, hyphens only)";
+        // Removed regex restriction: allow any characters as requested
         return null;
     }
 
@@ -255,9 +254,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         matches.forEach(item => {
             const div = document.createElement("div");
+            // Wrap text in a span to prevent flexbox from splitting it on mobile
+            const textSpan = document.createElement("span");
+            textSpan.className = "suggestion-text";
+
             // Highlight matching part
-            const regex = new RegExp(`(${val})`, "gi");
-            div.innerHTML = item.replace(regex, "<strong>$1</strong>");
+            const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+            textSpan.innerHTML = item.replace(regex, "<strong>$1</strong>");
+
+            div.appendChild(textSpan);
             div.innerHTML += `<span class="suggestion-type">Verified</span>`;
 
             div.addEventListener("click", () => {

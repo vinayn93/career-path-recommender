@@ -15,7 +15,9 @@ const careers = [
             "Angular",
             "Python",
             "Linux",
-            "Testing"
+            "Testing",
+            "C Language",
+            "C#"
         ],
         "relatedInterests": [
             "Coding",
