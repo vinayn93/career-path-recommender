@@ -1002,23 +1002,146 @@ footer {
         height: 40px;
         margin: 16px 0;
     }
+
+    .careers-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+
+.mobile-only {
+    display: none;
 }
 
 @media (max-width: 768px) {
+    .mobile-only {
+        display: flex;
+    }
+
+    #mobile-menu-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-light);
+        color: var(--text-primary);
+        padding: 8px;
+        border-radius: var(--radius-sm);
+        z-index: 1001;
+    }
+
+    header {
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        background: rgba(10, 10, 15, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .header-container {
+        position: relative;
+    }
+
+    nav#main-nav {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        height: 100vh;
+        background: var(--bg-dark);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    nav#main-nav.active {
+        right: 0;
+    }
+
+    #auth-nav-area {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        width: calc(100% - 48px);
+        flex-direction: column;
+        display: none;
+        /* Only show in mobile menu if desired, or keep fixed */
+    }
+
+    nav#main-nav.active~#auth-nav-area {
+        display: flex;
+    }
+
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
+    }
+
+    .hero p {
+        font-size: 1.1rem;
     }
 
     .input-group {
         flex-direction: column;
     }
 
-    .btn-primary {
+    .btn-primary,
+    .btn-glow {
         padding: 16px;
     }
 
-    nav {
-        gap: 16px;
+    .glass-card {
+        padding: 24px;
+    }
+
+    .how-it-works {
+        padding: 30px 20px;
+    }
+
+    .section-header h2 {
+        font-size: 2rem;
+    }
+}
+
+/* TV / Ultra-wide scales */
+@media (min-width: 1800px) {
+    .container {
+        max-width: 1600px;
+    }
+
+    body {
+        font-size: 1.1rem;
+    }
+
+    .hero h1 {
+        font-size: 5rem;
+    }
+}
+
+/* Small screen specific adjustments */
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .logo span {
+        font-size: 1.2rem;
+    }
+
+    .logo img {
+        height: 32px;
+        width: 32px;
+    }
+
+    .careers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-content {
+        text-align: center;
     }
 }
 

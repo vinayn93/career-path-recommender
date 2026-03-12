@@ -34,6 +34,16 @@
                     style="height: 48px; width: 48px; border-radius: 50%; object-fit: cover; object-position: center; transform: scale(1.2);">
                 <span>Career <span class="accent">Pathfinder</span></span>
             </div>
+
+            <button id="mobile-menu-btn" class="mobile-only" aria-label="Toggle Menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
             <nav id="main-nav">
                 <a href="#discover" class="active">Discover</a>
                 <a href="#compare">Compare</a>
@@ -283,7 +293,13 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 Career Pathfinder | Built by Vinay</p>
+        <div class="footer-content" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <p>&copy; 2026 Career Pathfinder | Built by Vinay</p>
+            <a href="mailto:nvskumar93@gmail.com" class="btn-secondary contact-btn"
+                style="padding: 10px 24px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px;">
+                <span>📧 Contact Us</span>
+            </a>
+        </div>
     </footer>
 
     <!-- Background Blur Overlay for Search -->
