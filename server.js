@@ -182,24 +182,47 @@ app.post('/api/recommend', (req, res) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-        jwt.verify(token, JWT_SECRET, async (err, user) => {
-            if (!err && user) {
+        jwt.verify(token, JWT_SECRET, async (err, authData) => {
+            if (!err && authData) {
                 try {
                     await connectToDatabase();
-                    const row = await User.findById(user.id);
-                    if (row) {
+                    const user = await User.findById(authData.id);
+                    if (user) {
                         let history = [];
-                        try { if (row.search_history) history = JSON.parse(row.search_history); } catch (e) { }
+                        try {
+                            if (user.search_history) history = JSON.parse(user.search_history);
+                        } catch (e) {
+                            console.error("History parse error:", e);
+                        }
 
+                        // Add new tags, maintaining uniqueness and limit
                         userProfile.forEach(p => {
-                            if (!history.includes(p)) history.push(p);
+                            if (!history.includes(p)) {
+                                history.unshift(p);
+                            }
                         });
 
-                        await User.findByIdAndUpdate(user.id, { search_history: JSON.stringify(history) });
+                        // Keep only last 15 unique tags for history
+                        const updatedHistory = [...new Set(history)].slice(0, 20);
+
+                        await User.findByIdAndUpdate(authData.id, { search_history: JSON.stringify(updatedHistory) });
                     }
-                } catch (e) { console.error(e) }
+                } catch (e) {
+                    console.error("Database history update error:", e);
+                }
             }
         });
+    }
+
+    // Input Validation
+    if (skills.length > 15) {
+        return res.status(400).json({ error: 'Maximum 15 skills allowed.' });
+    }
+
+    for (const skill of skills) {
+        if (typeof skill !== 'string' || skill.length < 2 || skill.length > 50) {
+            return res.status(400).json({ error: `Invalid skill tag: ${skill}` });
+        }
     }
 
     // Calculate match score for each career

@@ -164,9 +164,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Tag Input Logic ---
+    function validateTag(text) {
+        const regex = /^[a-zA-Z0-9\s-]+$/;
+        if (text.length < 2) return "Tag too short (min 2 chars)";
+        if (text.length > 50) return "Tag too long (max 50 chars)";
+        if (!regex.test(text)) return "Invalid characters (alphanumeric, spaces, hyphens only)";
+        return null;
+    }
+
     function addTag(value) {
         const tagText = value.trim();
-        if (tagText && !tags.includes(tagText.toLowerCase())) {
+        if (!tagText) return;
+
+        const error = validateTag(tagText);
+        if (error) {
+            alert(error);
+            return;
+        }
+
+        if (tags.length >= 15) {
+            alert("Maximum 15 tags allowed.");
+            return;
+        }
+
+        if (!tags.includes(tagText.toLowerCase())) {
             tags.push(tagText.toLowerCase());
             renderTags();
             skillInput.value = '';
@@ -213,72 +234,61 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeBtn.addEventListener('click', async () => {
             if (tags.length === 0) return;
 
-            // UI Loading State (Simulating "AI" processing)
+            // UI Loading State
             analyzeBtn.disabled = true;
             btnText.textContent = "Analyzing Profile...";
             analyzeSpinner.classList.remove('hidden');
             resultsContainer.classList.add('hidden');
 
             try {
-                // Artificial delay for UI effect
-                await new Promise(r => setTimeout(r, 1500));
+                const token = localStorage.getItem('pathfinder_token');
+                const res = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({ skills: tags, interests: [] })
+                });
 
-                const userProfile = [...tags]; // tags are already lowercased
+                if (!res.ok) throw new Error("Failed to fetch recommendations");
 
-                // Calculate match score for each career directly
-                const recommendations = careers.map(career => {
-                    const careerKeywords = [...career.skillsRequired.map(s => s.toLowerCase()), ...career.relatedInterests.map(i => i.toLowerCase())];
-
-                    let matchCount = 0;
-                    userProfile.forEach(kw => {
-                        if (careerKeywords.some(ck => ck.includes(kw) || kw.includes(ck))) {
-                            matchCount++;
-                        }
-                    });
-
-                    const maxPossibleMatches = Math.min(userProfile.length, careerKeywords.length) || 1;
-                    let matchScore = Math.floor((matchCount / maxPossibleMatches) * 100);
-
-                    if (matchCount > 0) matchScore = Math.min(98, matchScore + 15);
-
-                    return {
-                        ...career,
-                        matchCount,
-                        matchScore
-                    };
-                }).filter(career => career.matchCount > 0);
-
-                recommendations.sort((a, b) => b.matchScore - a.matchScore);
-                currentRecommendations = recommendations.slice(0, 5);
+                const data = await res.json();
+                currentRecommendations = data.recommendations || [];
 
                 renderRecommendations(currentRecommendations);
 
-                // Record History
+                // Record History locally for immediate feedback, but the source of truth is backend
                 totalRuns++;
                 searchHistory.unshift({
                     date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
                     tags: [...tags],
                     topMatches: currentRecommendations.slice(0, 3).map(r => r.title)
                 });
-                // Keep only last 10
                 if (searchHistory.length > 10) searchHistory.pop();
 
-                // Save state after analysis
-                saveUserData();
+                saveState();
 
-                // Reset Compare selection when new analysis runs
+                // Refresh profile data to get updated history from server
+                if (token) fetchProfileData();
+
+                // Reset Compare selection
                 selectedForComparison = [];
 
             } catch (error) {
                 console.error("Failed to fetch recommendations:", error);
                 alert("Error connecting to the AI engine. Is the server running?");
             } finally {
-                // Restore UI
                 analyzeBtn.disabled = false;
                 btnText.textContent = "Analyze Career Matrix";
                 analyzeSpinner.classList.add('hidden');
             }
         });
+    }
+
+    // Shorthand for saving common state
+    function saveState() {
+        saveUserData();
     }
 
     function getScoreClass(score) {
