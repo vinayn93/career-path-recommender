@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Pathfinder</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Interactive Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Abstract Background Elements -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+
+    <header>
+        <div class="container header-container">
+            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
+                <img src="https://i.ibb.co/YB1TjghW/gemini-2-5-flash-image-i-want-the-logo-only-not-any-backgrounds-i-should-have-a-theme-of-technology.jpg"
+                    alt="Career Pathfinder Logo"
+                    style="height: 48px; width: 48px; border-radius: 50%; object-fit: cover; object-position: center; transform: scale(1.2);">
+                <span>Career <span class="accent">Pathfinder</span></span>
+            </div>
+            <nav id="main-nav">
+                <a href="#discover" class="active">Discover</a>
+                <a href="#compare">Compare</a>
+                <a href="#roadmap">Roadmaps</a>
+                <a href="#resources">Resources</a>
+                <a href="#profile" id="nav-profile-link" class="hidden">Profile</a>
+            </nav>
+            <div id="auth-nav-area">
+                <div id="user-info" class="hidden">
+                    <span id="username-display"></span>
+                    <button id="logout-btn" class="btn-secondary"
+                        style="padding: 6px 14px; font-size: 0.85rem;">Logout</button>
+                </div>
+                <button id="show-auth-btn" class="btn-primary" style="padding: 8px 20px;">Login / Register</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section & Input Form -->
+        <section id="discover-section" class="view-section active">
+            <div class="hero">
+                <h1 class="animate-up">Discover Your <span class="gradient-text">Ideal Career</span></h1>
+                <p class="animate-up delay-1">Our neural engine analyzes your unique skills, passions, and working style
+                    to map out the perfect career trajectory.</p>
+            </div>
+
+            <!-- How it Works (Three Steps) -->
+            <div class="how-it-works glass-card animate-up delay-1" style="margin-bottom: 60px;">
+                <div class="step">
+                    <div class="step-icon">1</div>
+                    <h3>Input Skills</h3>
+                    <p>Enter your current abilities and core interests.</p>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step">
+                    <div class="step-icon">2</div>
+                    <h3>AI Analysis</h3>
+                    <p>Our algorithm matches you with 500+ career profiles.</p>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step">
+                    <div class="step-icon">3</div>
+                    <h3>Get Roadmap</h3>
+                    <p>Receive curated paths, salary data, and exact learning resources.</p>
+                </div>
+            </div>
+
+            <div class="glass-card analyzer-card animate-up delay-2">
+                <!-- Trending Jobs Section -->
+                <div style="margin-bottom: 40px; text-align: left;">
+                    <h3
+                        style="font-size: 1.2rem; margin-bottom: 16px; color: var(--text-primary); border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                        Trending & Highest Paying Roles in the Market</h3>
+                    <div id="trending-jobs-container"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <h2>Skill & Interest Analyzer</h2>
+                <p class="subtitle">Enter keywords relating to what you know and what you love doing.</p>
+
+                <div class="input-group">
+                    <input type="text" id="skill-input" placeholder="e.g. JavaScript, Design, Problem Solving, Math..."
+                        autocomplete="off">
+                    <button id="add-tag-btn" class="btn-primary">Add</button>
+                </div>
+
+                <div class="tags-container" id="tags-container">
+                    <!-- Tags will be injected here -->
+                </div>
+
+                <div class="action-container">
+                    <button id="analyze-btn" class="btn-glow" disabled>
+                        <span>Analyze Career Matrix</span>
+                        <div class="spinner hidden" id="analyze-spinner"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-container hidden" id="results-container">
+                <div class="section-header">
+                    <h2>AI Recommendations</h2>
+                    <p>Based on your unique profile</p>
+                </div>
+
+                <div class="careers-grid" id="careers-grid">
+                    <!-- Career cards will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Compare Dashboard Section -->
+        <section id="compare-section" class="view-section hidden">
+            <div class="section-header">
+                <h2>Career Comparison</h2>
+                <p>Select up to 3 careers from your recommendations to compare.</p>
+            </div>
+
+            <div class="glass-card">
+                <div style="margin-bottom: 20px; position: relative;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Search & Add Career to
+                        Compare:</label>
+                    <div class="input-group">
+                        <input type="text" id="compare-search-input"
+                            placeholder="Type a career name to add to comparison..." autocomplete="off"
+                            style="width: 100%;">
+                    </div>
+                    <div id="compare-autocomplete-list" class="autocomplete-items hidden"
+                        style="position: absolute; width: calc(100% - 40px); background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; margin-top: 4px; padding: 8px;">
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-light); padding-top: 16px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 12px;">Selected for Comparison (Max 3):</h3>
+                    <div class="compare-selector" id="compare-selector">
+                        <!-- Rendered selected tags -->
+                        <span style="color: var(--text-secondary); font-size: 0.9em;">No careers selected. Search above
+                            to add.</span>
+                    </div>
+                </div>
+
+                <button id="compare-btn" class="btn-secondary" disabled style="margin-top: 20px;">Compare
+                    Selected</button>
+            </div>
+
+            <div class="comparison-dashboard hidden" id="comparison-dashboard">
+                <!-- Data Visualization Chart -->
+                <div class="chart-wrapper">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+
+                <div class="table-container">
+                    <table id="compare-table">
+                        <thead>
+                            <tr id="compare-headers">
+                                <th>Criteria</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compare-body">
+                            <!-- Rows injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Roadmap Section -->
+        <section id="roadmap-section" class="view-section hidden">
+            <div class="section-header">
+                <h2>Career Roadmaps</h2>
+                <p>View detailed 1-year learning plans for your recommended careers.</p>
+            </div>
+
+            <div class="glass-card" style="margin-bottom: 30px; position: relative;">
+                <div class="input-group">
+                    <input type="text" id="roadmap-search-input"
+                        placeholder="Search for a career (e.g., Data Scientist)..." autocomplete="off"
+                        style="width: 100%;">
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div id="roadmap-autocomplete-list" class="autocomplete-items hidden"
+                    style="position: absolute; width: calc(100% - 40px); background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; margin-top: 4px; padding: 8px;">
+                </div>
+            </div>
+
+            <div class="resources-grid" id="roadmap-page-grid">
+                <div class="empty-state"><span>Awaiting your profile analysis</span><span
+                        style="font-size: 0.9rem; opacity: 0.7;">Run the AI analyzer to receive your custom 1-year
+                        learning
+                        roadmaps here.</span></div>
+            </div>
+        </section>
+
+        <!-- Resources Section -->
+        <section id="resources-section" class="view-section hidden">
+            <div class="section-header">
+                <h2>Learning Resources</h2>
+                <p>Curated learning materials for your selected paths.</p>
+            </div>
+
+            <div class="glass-card" style="margin-bottom: 30px; position: relative;">
+                <div class="input-group">
+                    <input type="text" id="resource-search-input"
+                        placeholder="Search for a specific career path (e.g., Cloud Architect)..." autocomplete="off"
+                        style="width: 100%;">
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div id="resource-autocomplete-list" class="autocomplete-items hidden"
+                    style="position: absolute; width: calc(100% - 40px); background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; margin-top: 4px; padding: 8px;">
+                </div>
+            </div>
+
+            <div class="resources-grid" id="resources-grid">
+                <div class="empty-state"><span>Awaiting your profile analysis</span><span
+                        style="font-size: 0.9rem; opacity: 0.7;">Run the AI analyzer to receive your custom learning
+                        roadmap here.</span></div>
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profile-section" class="view-section hidden">
+            <div class="section-header">
+                <h2>Your Profile</h2>
+                <p>Manage your personal details and view your search history.</p>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px;">
+                <!-- Personal Info Form -->
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 20px; color: var(--accent-glow);">Personal Details</h3>
+                    <div class="input-group" style="margin-bottom: 15px;">
+                        <input type="text" id="profile-name" placeholder="Full Name" style="width: 100%;">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 15px;">
+                        <input type="text" id="profile-role" placeholder="Current Role / Title" style="width: 100%;">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 20px;">
+                        <input type="text" id="profile-location" placeholder="Location" style="width: 100%;">
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button id="edit-profile-btn" class="btn-secondary" style="flex: 1; display: none;">Edit
+                            Details</button>
+                        <button id="save-profile-btn" class="btn-glow" style="flex: 1;"><span>Save
+                                Details</span></button>
+                    </div>
+
+                    <p id="profile-save-message"
+                        style="margin-top: 10px; font-size: 0.9rem; color: #10b981; display: none;">Saved successfully!
+                    </p>
+                </div>
+
+                <!-- Search History -->
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 20px; color: var(--accent-glow);">Search History (Interests)</h3>
+                    <div id="profile-history-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">No search history yet.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Career Pathfinder | Built by Vinay</p>
+    </footer>
+
+    <!-- Background Blur Overlay for Search -->
+    <div id="search-blur-overlay"></div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box glass-card">
+            <button id="close-auth-modal" class="modal-close-btn">✕</button>
+            <div class="modal-tabs">
+                <button id="tab-login" class="modal-tab active">Login</button>
+                <button id="tab-register" class="modal-tab">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <h2>Welcome Back</h2>
+                <p class="subtitle">Sign in to your account</p>
+                <div class="auth-field">
+                    <label>Username</label>
+                    <input type="text" id="login-username" placeholder="Enter your username" autocomplete="off">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+                <p id="login-error" class="auth-error hidden"></p>
+                <button id="login-submit-btn" class="btn-glow" style="width:100%; margin-top:8px;"><span>Sign
+                        In</span></button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="auth-form hidden">
+                <h2>Create Account</h2>
+                <p class="subtitle">Join Career Pathfinder</p>
+                <div class="auth-field">
+                    <label>Username</label>
+                    <input type="text" id="reg-username" placeholder="Choose a username" autocomplete="off">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" placeholder="Create a password">
+                </div>
+                <p id="register-error" class="auth-error hidden"></p>
+                <button id="register-submit-btn" class="btn-glow" style="width:100%; margin-top:8px;"><span>Create
+                        Account</span></button>
+            </div>
+        </div>
+    </div>
+    <!-- Roadmap Modal -->
+    <div id="roadmap-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box glass-card" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <button id="close-roadmap-modal" class="modal-close-btn">✕</button>
+            <h2 id="roadmap-modal-title" style="margin-bottom: 24px;">Career Roadmap</h2>
+            <div id="roadmap-timeline" class="timeline-container">
+                <!-- Roadmap steps injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
