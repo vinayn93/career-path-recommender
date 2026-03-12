@@ -1,35 +1,22 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const mongoose = require('mongoose');
 
-const dbPath = process.env.VERCEL
-    ? '/tmp/users.db'
-    : path.resolve(__dirname, 'users.db');
+// Fallback to local MongoDB URI if the environment variable isn't set
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://admin:Nvsk%402468@cluster0.xb469xf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
-// Connect to SQLite database
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error connecting to the SQLite database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
+// Connect to MongoDB Atlas
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Connected to the MongoDB database.'))
+    .catch((err) => console.error('Error connecting to MongoDB:', err.message));
 
-        // Initialize tables if they don't exist
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            balance_inr REAL DEFAULT 0.0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`, (err) => {
-            if (err) {
-                console.error('Error creating users table:', err.message);
-            } else {
-                console.log('Users table ready.');
-                // Add new columns for profile if they don't exist
-                db.run(`ALTER TABLE users ADD COLUMN profile_details TEXT DEFAULT '{}'`, () => { });
-                db.run(`ALTER TABLE users ADD COLUMN search_history TEXT DEFAULT '[]'`, () => { });
-            }
-        });
-    }
-});
+// Define User Schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password_hash: { type: String, required: true },
+    balance_inr: { type: Number, default: 0.0 },
+    profile_details: { type: String, default: '{}' },
+    search_history: { type: String, default: '[]' }
+}, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-module.exports = db;
+const User = mongoose.model('User', userSchema);
+
+module.exports = { User };

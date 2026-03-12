@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const db = require('./database');
+const { User } = require('./database');
 const { careers, resources } = require('./data/mockData');
 
 // Secret key for JWT (in production, use environment variable)
@@ -43,16 +43,16 @@ app.post('/api/register', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.run('INSERT INTO users (username, password_hash) VALUES (?, ?)', [username, hashedPassword], function (err) {
-            if (err) {
-                if (err.message.includes('UNIQUE constraint failed')) {
-                    return res.status(409).json({ error: 'Username already exists.' });
-                }
-                console.error(err);
-                return res.status(500).json({ error: 'Database error.' });
+        try {
+            const newUser = await User.create({ username, password_hash: hashedPassword });
+            res.status(201).json({ message: 'User registered successfully.', userId: newUser._id });
+        } catch (err) {
+            if (err.code === 11000) {
+                return res.status(409).json({ error: 'Username already exists.' });
             }
-            res.status(201).json({ message: 'User registered successfully.', userId: this.lastID });
-        });
+            console.error(err);
+            return res.status(500).json({ error: 'Database error.' });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error.' });
@@ -60,18 +60,15 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required.' });
     }
 
-    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Database error.' });
-        }
+    try {
+        const user = await User.findOne({ username });
         if (!user) {
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
@@ -81,50 +78,47 @@ app.post('/api/login', (req, res) => {
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
 
-        const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ message: 'Login successful.', token, username: user.username, balance: user.balance_inr });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Get User Balance
-app.get('/api/user/balance', authenticateToken, (req, res) => {
-    db.get('SELECT username, balance_inr FROM users WHERE id = ?', [req.user.id], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error.' });
-        }
+app.get('/api/user/balance', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
         }
         res.json({ username: user.username, balance: user.balance_inr });
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Add Funds (Mock functionality for demonstration)
-app.post('/api/user/add-funds', authenticateToken, (req, res) => {
+app.post('/api/user/add-funds', authenticateToken, async (req, res) => {
     const { amount } = req.body;
 
     if (!amount || isNaN(amount) || amount <= 0) {
         return res.status(400).json({ error: 'Valid amount is required.' });
     }
 
-    db.run('UPDATE users SET balance_inr = balance_inr + ? WHERE id = ?', [amount, req.user.id], function (err) {
-        if (err) {
-            return res.status(500).json({ error: 'Database error.' });
-        }
-
-        // Fetch updated balance
-        db.get('SELECT balance_inr FROM users WHERE id = ?', [req.user.id], (err, row) => {
-            res.json({ message: 'Funds added successfully.', balance: row.balance_inr });
-        });
-    });
+    try {
+        const user = await User.findByIdAndUpdate(req.user.id, { $inc: { balance_inr: amount } }, { new: true });
+        res.json({ message: 'Funds added successfully.', balance: user.balance_inr });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Get Current User Profile
-app.get('/api/me', authenticateToken, (req, res) => {
-    db.get('SELECT username, balance_inr, profile_details, search_history FROM users WHERE id = ?', [req.user.id], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error.' });
-        }
+app.get('/api/me', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
         }
@@ -144,25 +138,26 @@ app.get('/api/me', authenticateToken, (req, res) => {
             profileDetails,
             searchHistory
         });
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Update Profile Details
-app.put('/api/profile', authenticateToken, (req, res) => {
+app.put('/api/profile', authenticateToken, async (req, res) => {
     const { profileDetails } = req.body;
 
     if (!profileDetails || typeof profileDetails !== 'object') {
         return res.status(400).json({ error: 'Invalid profile details format.' });
     }
 
-    const jsonStr = JSON.stringify(profileDetails);
-
-    db.run('UPDATE users SET profile_details = ? WHERE id = ?', [jsonStr, req.user.id], function (err) {
-        if (err) {
-            return res.status(500).json({ error: 'Database error.' });
-        }
+    try {
+        const jsonStr = JSON.stringify(profileDetails);
+        await User.findByIdAndUpdate(req.user.id, { profile_details: jsonStr });
         res.json({ message: 'Profile updated successfully.' });
-    });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // --- EXISTING RECOMMENDATION ENDPOINTS ---
@@ -183,8 +178,8 @@ app.post('/api/recommend', (req, res) => {
     if (token) {
         jwt.verify(token, JWT_SECRET, (err, user) => {
             if (!err && user) {
-                db.get('SELECT search_history FROM users WHERE id = ?', [user.id], (dbErr, row) => {
-                    if (!dbErr && row) {
+                User.findById(user.id).then(row => {
+                    if (row) {
                         let history = [];
                         try { if (row.search_history) history = JSON.parse(row.search_history); } catch (e) { }
 
@@ -192,9 +187,9 @@ app.post('/api/recommend', (req, res) => {
                             if (!history.includes(p)) history.push(p);
                         });
 
-                        db.run('UPDATE users SET search_history = ? WHERE id = ?', [JSON.stringify(history), user.id]);
+                        User.findByIdAndUpdate(user.id, { search_history: JSON.stringify(history) }).catch(e => console.error(e));
                     }
-                });
+                }).catch(e => console.error(e));
             }
         });
     }
