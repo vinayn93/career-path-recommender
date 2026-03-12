@@ -22,6 +22,6 @@ const userSchema = new mongoose.Schema({
     search_history: { type: String, default: '[]' }
 }, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 module.exports = { User, connectToDatabase };

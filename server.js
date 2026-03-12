@@ -52,11 +52,11 @@ app.post('/api/register', async (req, res) => {
                 return res.status(409).json({ error: 'Username already exists.' });
             }
             console.error(err);
-            return res.status(500).json({ error: 'Database error.' });
+            return res.status(500).json({ error: 'Database error.', details: err.message });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({ error: 'Internal server error.', details: error.message });
     }
 });
 
@@ -84,7 +84,7 @@ app.post('/api/login', async (req, res) => {
         res.json({ message: 'Login successful.', token, username: user.username, balance: user.balance_inr });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Database error.' });
+        res.status(500).json({ error: 'Database error.', details: err.message, stack: err.stack });
     }
 });
 
