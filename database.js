@@ -1,12 +1,17 @@
 const mongoose = require('mongoose');
 
-// Fallback to local MongoDB URI if the environment variable isn't set
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://admin:Nvsk%402468@cluster0.xb469xf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
-// Connect to MongoDB Atlas
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Connected to the MongoDB database.'))
-    .catch((err) => console.error('Error connecting to MongoDB:', err.message));
+let cachedDb = null;
+
+async function connectToDatabase() {
+    if (cachedDb) return cachedDb;
+
+    const db = await mongoose.connect(MONGODB_URI);
+    cachedDb = db;
+    console.log('Connected to the MongoDB database (Serverless Cache).');
+    return db;
+}
 
 // Define User Schema
 const userSchema = new mongoose.Schema({
@@ -19,4 +24,4 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = { User };
+module.exports = { User, connectToDatabase };

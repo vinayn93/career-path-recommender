@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User } = require('./database');
+const { User, connectToDatabase } = require('./database');
 const { careers, resources } = require('./data/mockData');
 
 // Secret key for JWT (in production, use environment variable)
@@ -41,6 +41,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     try {
+        await connectToDatabase();
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
@@ -68,6 +69,7 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
+        await connectToDatabase();
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(401).json({ error: 'Invalid username or password.' });
@@ -89,6 +91,7 @@ app.post('/api/login', async (req, res) => {
 // Get User Balance
 app.get('/api/user/balance', authenticateToken, async (req, res) => {
     try {
+        await connectToDatabase();
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
@@ -108,6 +111,7 @@ app.post('/api/user/add-funds', authenticateToken, async (req, res) => {
     }
 
     try {
+        await connectToDatabase();
         const user = await User.findByIdAndUpdate(req.user.id, { $inc: { balance_inr: amount } }, { new: true });
         res.json({ message: 'Funds added successfully.', balance: user.balance_inr });
     } catch (err) {
@@ -118,6 +122,7 @@ app.post('/api/user/add-funds', authenticateToken, async (req, res) => {
 // Get Current User Profile
 app.get('/api/me', authenticateToken, async (req, res) => {
     try {
+        await connectToDatabase();
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
@@ -152,6 +157,7 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 
     try {
+        await connectToDatabase();
         const jsonStr = JSON.stringify(profileDetails);
         await User.findByIdAndUpdate(req.user.id, { profile_details: jsonStr });
         res.json({ message: 'Profile updated successfully.' });
@@ -176,9 +182,11 @@ app.post('/api/recommend', (req, res) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-        jwt.verify(token, JWT_SECRET, (err, user) => {
+        jwt.verify(token, JWT_SECRET, async (err, user) => {
             if (!err && user) {
-                User.findById(user.id).then(row => {
+                try {
+                    await connectToDatabase();
+                    const row = await User.findById(user.id);
                     if (row) {
                         let history = [];
                         try { if (row.search_history) history = JSON.parse(row.search_history); } catch (e) { }
@@ -187,9 +195,9 @@ app.post('/api/recommend', (req, res) => {
                             if (!history.includes(p)) history.push(p);
                         });
 
-                        User.findByIdAndUpdate(user.id, { search_history: JSON.stringify(history) }).catch(e => console.error(e));
+                        await User.findByIdAndUpdate(user.id, { search_history: JSON.stringify(history) });
                     }
-                }).catch(e => console.error(e));
+                } catch (e) { console.error(e) }
             }
         });
     }
