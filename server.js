@@ -220,7 +220,7 @@ app.post('/api/recommend', (req, res) => {
     }
 
     for (const skill of skills) {
-        if (typeof skill !== 'string' || skill.length < 2 || skill.length > 50) {
+        if (typeof skill !== 'string' || skill.length < 1 || skill.length > 50) {
             return res.status(400).json({ error: `Invalid skill tag: ${skill}` });
         }
     }

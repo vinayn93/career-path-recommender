@@ -7,6 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalRuns = 0;
     let currentUser = null; // { username, balance }
 
+    // --- Master Skills List ---
+    const masterSkillsList = Array.from(new Set(
+        careers.flatMap(c => [
+            ...c.skillsRequired,
+            ...c.relatedInterests
+        ])
+    )).sort();
+
     // --- DOM Elements ---
     // App
     const skillInput = document.getElementById('skill-input');
@@ -166,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Tag Input Logic ---
     function validateTag(text) {
         const regex = /^[a-zA-Z0-9\s-]+$/;
-        if (text.length < 2) return "Tag too short (min 2 chars)";
+        if (text.length < 1) return "Tag too short";
         if (text.length > 50) return "Tag too long (max 50 chars)";
         if (!regex.test(text)) return "Invalid characters (alphanumeric, spaces, hyphens only)";
         return null;
@@ -206,10 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTags() {
         tagsContainer.innerHTML = '';
         tags.forEach(tag => {
+            const isVerified = masterSkillsList.some(s => s.toLowerCase() === tag.toLowerCase());
             const el = document.createElement('div');
             el.className = 'tag';
             el.innerHTML = `
                 ${tag}
+                ${isVerified ? '<span class="verified-badge" title="Verified Skill">✓</span>' : '<span class="custom-badge" title="Custom Skill">✎</span>'}
                 <span class="tag-remove" aria-label="Remove tag">✕</span>
             `;
             el.querySelector('.tag-remove').addEventListener('click', () => removeTag(tag));
@@ -217,15 +227,104 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (skillInput) {
-        skillInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addTag(skillInput.value);
+    // --- Autocomplete Functionality ---
+    let currentFocus = -1;
+
+    function showSuggestions(val) {
+        if (!val) {
+            closeAllSuggestions();
+            return false;
+        }
+
+        closeAllSuggestions();
+        currentFocus = -1;
+
+        const container = document.createElement("div");
+        container.setAttribute("id", "autocomplete-list");
+        container.setAttribute("class", "autocomplete-items");
+        skillInput.parentNode.appendChild(container);
+
+        const matches = masterSkillsList.filter(s =>
+            s.toLowerCase().includes(val.toLowerCase())
+        ).slice(0, 10);
+
+        if (matches.length === 0) {
+            closeAllSuggestions();
+            return;
+        }
+
+        matches.forEach(item => {
+            const div = document.createElement("div");
+            // Highlight matching part
+            const regex = new RegExp(`(${val})`, "gi");
+            div.innerHTML = item.replace(regex, "<strong>$1</strong>");
+            div.innerHTML += `<span class="suggestion-type">Verified</span>`;
+
+            div.addEventListener("click", () => {
+                skillInput.value = item;
+                closeAllSuggestions();
+                addTag(item);
+            });
+            container.appendChild(div);
         });
+    }
+
+    function closeAllSuggestions(element) {
+        const x = document.getElementsByClassName("autocomplete-items");
+        for (let i = 0; i < x.length; i++) {
+            if (element !== x[i] && element !== skillInput) {
+                x[i].parentNode.removeChild(x[i]);
+            }
+        }
+    }
+
+    if (skillInput) {
+        skillInput.addEventListener("input", (e) => {
+            showSuggestions(e.target.value);
+        });
+
+        skillInput.addEventListener("keydown", (e) => {
+            let x = document.getElementById("autocomplete-list");
+            if (x) x = x.getElementsByTagName("div");
+            if (e.keyCode === 40) { // Down
+                currentFocus++;
+                addActive(x);
+            } else if (e.keyCode === 38) { // Up
+                currentFocus--;
+                addActive(x);
+            } else if (e.keyCode === 13) { // Enter
+                e.preventDefault();
+                if (currentFocus > -1) {
+                    if (x) x[currentFocus].click();
+                } else {
+                    addTag(skillInput.value);
+                }
+            }
+        });
+
+        function addActive(x) {
+            if (!x) return false;
+            removeActive(x);
+            if (currentFocus >= x.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = (x.length - 1);
+            x[currentFocus].classList.add("autocomplete-active");
+            x[currentFocus].scrollIntoView({ block: "nearest" });
+        }
+
+        function removeActive(x) {
+            for (let i = 0; i < x.length; i++) {
+                x[i].classList.remove("autocomplete-active");
+            }
+        }
     }
 
     if (addTagBtn) {
         addTagBtn.addEventListener('click', () => addTag(skillInput.value));
     }
+
+    document.addEventListener("click", (e) => {
+        closeAllSuggestions(e.target);
+    });
 
     // --- API Interactions ---
 
